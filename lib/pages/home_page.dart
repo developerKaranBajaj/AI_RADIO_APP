@@ -38,11 +38,63 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  setupAlan(){
+  setupAlan() {
     AlanVoice.addButton(
         "cb46dcffc14e379b8c34b47e5d9699d22e956eca572e1d8b807a3e2338fdd0dc/stage",
         buttonAlign: AlanVoice.BUTTON_ALIGN_RIGHT);
+
+    AlanVoice.callbacks.add((command) => _handleCommand(command.data));
   }
+
+  _handleCommand(Map<String, dynamic> response) {
+    switch (response["command"]) {
+      case "play":
+        _playMusic(_selectedRadio.url);
+        break;
+      case "play_channel":
+        _audioPlayer.pause();
+        MyRadio newRadio = radios.firstWhere((element) => element.id == id);
+        radios.remove(newRadio);
+        radios.insert(0, newRadio);
+        _playMusic(newRadio.url);
+        break;
+      case "stop":
+        _audioPlayer.stop();
+        break;
+      case "next":
+        final index = _selectedRadio.id;
+        MyRadio newRadio;
+        if (index + 1 > radios.length) {
+          newRadio = radios.firstWhere((element) => element.id == 1);
+          radios.remove(newRadio);
+          radios.insert(0, newRadio);
+        } else {
+          newRadio = radios.firstWhere((element) => element.id == index + 1);
+          radios.remove(newRadio);
+          radios.insert(0, newRadio);
+        }
+        _playMusic(newRadio.url);
+        break;
+      case "prev":
+        final index = _selectedRadio.id;
+        MyRadio newRadio;
+        if (index - 1 <= 0) {
+          newRadio = radios.firstWhere((element) => element.id == 1);
+          radios.remove(newRadio);
+          radios.insert(0, newRadio);
+        } else {
+          newRadio = radios.firstWhere((element) => element.id == index - 1);
+          radios.remove(newRadio);
+          radios.insert(0, newRadio);
+        }
+        _playMusic(newRadio.url);
+        break;
+      default:
+        print("Command was ${response["command"]}");
+        break;
+    }
+  }
+
   _playMusic(String url) {
     _audioPlayer.play(url);
     _selectedRadio = radios.firstWhere((element) => element.url == url);
@@ -52,6 +104,7 @@ class _HomePageState extends State<HomePage> {
 
   fetchRadios() async {
     final radioJson = await rootBundle.loadString("assets/radio.json");
+    _selectedRadio = radios[0];
     radios = MyRadioList.fromJson(radioJson).radios;
     setState(() {});
   }
@@ -174,5 +227,4 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
 }
