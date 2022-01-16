@@ -1,3 +1,5 @@
+// ignore_for_file: unrelated_type_equality_checks
+
 import 'package:ai_radio/model/radio.dart';
 import 'package:ai_radio/utils/ai_utils.dart';
 import 'package:alan_voice/alan_voice.dart';
@@ -19,6 +21,18 @@ class _HomePageState extends State<HomePage> {
   late MyRadio _selectedRadio;
   late Color _selectedColor;
   bool _isPlaying = false;
+
+  final sugg = [
+    "Play",
+    "Stop",
+    "Play rock music",
+    "Play 107 FM",
+    "Play next",
+    "Play 104 FM",
+    "Pause",
+    "Play Previous",
+    "Play pop music"
+  ];
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -53,6 +67,7 @@ class _HomePageState extends State<HomePage> {
         break;
       case "play_channel":
         _audioPlayer.pause();
+        final id = response["id"];
         MyRadio newRadio = radios.firstWhere((element) => element.id == id);
         radios.remove(newRadio);
         radios.insert(0, newRadio);
@@ -112,7 +127,31 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const Drawer(),
+      drawer: Drawer(
+        child: Container(
+          color: _selectedColor ?? AIColor.primaryColor2,
+          child: radios != null
+              ? [
+                  100.heightBox,
+                  "All Channels".text.xl.white.semiBold.make().px16(),
+                  20.heightBox,
+                  ListView(
+                    padding: Vx.m0,
+                    shrinkWrap: true,
+                    children: radios
+                        .map((e) => ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: NetworkImage(e.icon),
+                              ),
+                              title: "${e.name} FM".text.white.make(),
+                              subtitle: e.tagline.text.white.make(),
+                            ))
+                        .toList(),
+                  ).expand()
+                ].vStack()
+              : const Offstage(),
+        ),
+      ),
       body: Stack(
         children: [
           VxAnimatedBox()
@@ -124,17 +163,43 @@ class _HomePageState extends State<HomePage> {
                 ], begin: Alignment.topLeft, end: Alignment.bottomRight),
               )
               .make(),
-          AppBar(
-            title: "AI Radio".text.xl4.bold.white.make().shimmer(
-                primaryColor: Vx.purple300, secondaryColor: Colors.white),
-            backgroundColor: Colors.transparent,
-            elevation: 0.0,
-            centerTitle: true,
-          ).h(100.0).p16(),
+          [
+            AppBar(
+              title: "AI Radio".text.xl4.bold.white.make().shimmer(
+                  primaryColor: Vx.purple300, secondaryColor: Colors.white),
+              backgroundColor: Colors.transparent,
+              elevation: 0.0,
+              centerTitle: true,
+            ).h(100.0).p16(),
+            // 20.heightBox,
+            "Start with - Hey ALan 👇".text.italic.semiBold.white.make(),
+            VxSwiper.builder(
+              itemCount: sugg.length,
+              height: 50.0,
+              viewportFraction: 0.35,
+              autoPlay: true,
+              autoPlayAnimationDuration: 3.seconds,
+              autoPlayCurve: Curves.linear,
+              enableInfiniteScroll: true,
+              itemBuilder: (context, index) {
+                final s = sugg[index];
+                return Chip(
+                  label: s.text.make(),
+                  backgroundColor: Vx.randomColor,
+                );
+              },
+            )
+          ].vStack(),
+          30.heightBox,
           radios != null
               ? VxSwiper.builder(
                   itemCount: radios.length,
-                  aspectRatio: 1.0,
+                  // aspectRatio: 1.0,
+                  aspectRatio: context.mdWindowSize == MobileDeviceSize.small
+                      ? 1.0
+                      : context.mdWindowSize == MobileDeviceSize.medium
+                          ? 2.0
+                          : 3.0,
                   onPageChanged: (index) {
                     final colorHex = radios[index].color;
                     _selectedColor = Color(int.parse(colorHex));
